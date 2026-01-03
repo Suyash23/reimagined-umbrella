@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'dart:ui';
-import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -12,9 +11,9 @@ void main() {
   runApp(GameWidget(game: MyGame()));
 }
 
-// We add the `HasKeyboardHandlerComponents` mixin to our game
-// so it can listen for keyboard events.
-class MyGame extends FlameGame with HasKeyboardHandlerComponents {
+// We add the `KeyboardEvents` mixin to our game
+// so it can listen for keyboard events directly.
+class MyGame extends FlameGame with KeyboardEvents {
   // We need to keep a reference to our player and tube so we can interact with them.
   late final Player _player;
   late final Tube _tube;
@@ -31,23 +30,28 @@ class MyGame extends FlameGame with HasKeyboardHandlerComponents {
     add(_tube = Tube());
     // Then we create and add the player
     add(_player = Player());
+  }
 
-    // We add a keyboard listener to the game.
-    // This will listen for when we press the left and right arrow keys.
-    add(
-      KeyboardListenerComponent(
-        keyUp: {
-          LogicalKeyboardKey.arrowLeft: (keys) {
-            _player.moveLeft();
-            return true;
-          },
-          LogicalKeyboardKey.arrowRight: (keys) {
-            _player.moveRight();
-            return true;
-          },
-        },
-      ),
-    );
+  @override
+  KeyEventResult onKeyEvent(
+    RawKeyEvent event,
+    Set<LogicalKeyboardKey> keysPressed,
+  ) {
+    super.onKeyEvent(event, keysPressed);
+    // We only care when the key is released.
+    if (event is RawKeyUpEvent) {
+      if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+        // Move the player left when the left arrow key is released.
+        _player.moveLeft();
+        return KeyEventResult.handled;
+      } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+        // Move the player right when the right arrow key is released.
+        _player.moveRight();
+        return KeyEventResult.handled;
+      }
+    }
+    // If it's not a key we care about, we ignore it.
+    return KeyEventResult.ignored;
   }
 
   @override
