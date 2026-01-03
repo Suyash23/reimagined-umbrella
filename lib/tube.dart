@@ -14,10 +14,8 @@ class TubeRing extends PositionComponent {
   TubeRing({required this.radius, required Color color})
       : paint = Paint()
           ..color = color
-          // This makes the ring just an outline, not a filled circle
-          ..style = PaintingStyle.stroke
-          // This is how thick the outline is
-          ..strokeWidth = 2.0;
+          // This makes the ring a filled circle, not just an outline
+          ..style = PaintingStyle.fill;
 
   @override
   void render(Canvas canvas) {
