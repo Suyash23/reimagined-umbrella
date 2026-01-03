@@ -2,7 +2,6 @@
 import 'dart:math';
 
 import 'package:flame/components.dart';
-import 'package:flame/sprite.dart';
 
 // This is our player, the character that runs.
 class Player extends SpriteAnimationComponent with HasGameRef {
@@ -31,17 +30,16 @@ class Player extends SpriteAnimationComponent with HasGameRef {
     await super.onLoad();
 
     // We are loading the running animation from the image file.
+    // We tell it the picture, and how to cut it up into frames.
     // It has 8 frames (pictures), each is 78 pixels wide and 128 pixels tall.
     // We tell it to play at 10 frames per second (1 frame every 0.1 seconds) and to loop.
-    final spriteSheet = SpriteSheet(
-      image: await game.images.load('runner.png'),
-      srcSize: Vector2(78.0, 128.0),
-    );
-
-    animation = spriteSheet.createAnimation(
-      row: 0,
-      stepTime: 0.1,
-      to: 8,
+    animation = await game.loadSpriteAnimation(
+      'runner.png',
+      SpriteAnimationData.sequenced(
+        amount: 8,
+        stepTime: 0.1,
+        textureSize: Vector2(78.0, 128.0),
+      ),
     );
   }
 
