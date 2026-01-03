@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flame/game.dart';
 import 'package:flutter/widgets.dart';
 
@@ -9,6 +10,11 @@ void main() {
 }
 
 class MyGame extends FlameGame {
+  // This is the background color of our game.
+  // We're making it a dark grey so we can see our white tube rings.
+  @override
+  Color backgroundColor() => const Color(0xFF222222);
+
   @override
   Future<void> onLoad() async {
     await super.onLoad();
