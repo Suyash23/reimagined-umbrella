@@ -1,113 +1,72 @@
 import 'dart:ui';
+import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'dart:math';
 
-// This will represent a single ring of our heaven tube
-class TubeRing extends PositionComponent {
-  // We use a Paint to say what our ring will look like
-  final Paint paint;
-  // This is how big the ring is right now
-  double radius;
+// This is the main component for our tube.
+// It will draw a static, 3D-looking tube on the screen.
+class Tube extends PositionComponent {
+  // This is the brush we will use to paint our tube.
+  // We'll make it a nice cement-grey color.
+  final Paint tubePaint = Paint()..color = const Color(0xFF888888);
 
-  // When we make a new ring, we give it a starting size (radius) and color
-  TubeRing({required this.radius, required Color color})
-      : paint = Paint()
-          ..color = color
-          // This makes the ring a filled circle, not just an outline
-          ..style = PaintingStyle.fill;
-
+  // This is a special function that Flame calls to draw things on the screen.
+  // We will tell it how to draw our tube here.
   @override
   void render(Canvas canvas) {
     super.render(canvas);
-    // This is where we actually draw the circle on the screen
-    // We draw it at the center of our component, with its current radius
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), radius, paint);
+
+    // We find the center of the screen to draw our tube there.
+    final center = size / 2;
+
+    // This is the size of the tube's opening right in front of you.
+    final startRadius = size.x / 2.5;
+    // This is the size of the tube's opening at the very end.
+    final endRadius = startRadius / 5.0;
+
+    // This is how many rings we'll draw to make the tube look solid.
+    // More rings make it look smoother, like a real tube.
+    const numSegments = 100;
+
+    // This is the angle you are looking down into the tube.
+    // We need to turn 17 degrees into a number computers understand (radians).
+    final angle = 17 * (pi / 180);
+
+    // We'll draw the tube from the back to the front.
+    // This is like stacking smaller pieces of paper behind bigger ones.
+    for (int i = numSegments; i >= 0; i--) {
+      // 't' is a number from 0 (the far end) to 1 (the near end).
+      final t = i / numSegments;
+
+      // We figure out how big this piece of the tube is.
+      // We use 'pow(t, 2)' to make the tube seem to get smaller faster
+      // as it goes into the distance, which looks more realistic.
+      final radius = endRadius + (startRadius - endRadius) * pow(t, 2);
+
+      // We figure out where to draw this piece of the tube.
+      // The 'y' position is moved up to create the 17-degree angle effect.
+      // This lets you see the bottom of the tube's inside.
+      final yOffset = (size.y / 2) * tan(angle) * (1 - t);
+      final tubeCenter = Offset(center.x, center.y - yOffset);
+
+      // A tube opening looks like a stretched circle (an ellipse) when you look at it from an angle.
+      // We'll make it a bit wider than it is tall.
+      final rect = Rect.fromCenter(
+        center: tubeCenter,
+        width: radius * 2,
+        height: radius * 1.8, // This makes it an ellipse
+      );
+
+      // We finally draw the ellipse on the screen!
+      canvas.drawOval(rect, tubePaint);
+    }
   }
 
+  // This function is called when the screen size changes.
   @override
   void onGameResize(Vector2 gameSize) {
     super.onGameResize(gameSize);
-    // We make the ring component take up the whole screen
-    size = gameSize;
-    // We position the ring at the top-left corner of the screen
-    position = Vector2(0, 0);
-  }
-}
-
-// This is the main component for our tube. It will manage all the rings.
-class Tube extends PositionComponent {
-  // A list to hold all the rings that are currently on the screen
-  final List<TubeRing> _rings = [];
-  // A timer to control how often we add a new ring
-  final Timer _spawnTimer = Timer(0.5, repeat: true);
-  // A random number generator to make the rings have slightly different colors
-  final Random _random = Random();
-
-  // This is a special function that runs when the component is first added to the game
-  @override
-  Future<void> onLoad() async {
-    super.onLoad();
-    // We start the timer when the component loads
-    _spawnTimer.start();
-  }
-
-  // This function is called for every frame of the game. It's where we update things.
-  @override
-  void update(double dt) {
-    super.update(dt);
-    // We update our timer
-    _spawnTimer.update(dt);
-
-    // If the timer has finished a cycle, it's time to add a new ring!
-    if (_spawnTimer.finished) {
-      _spawnRing();
-    }
-
-    // We create a list of rings that we need to remove
-    // (the ones that have grown too big)
-    final List<TubeRing> ringsToRemove = [];
-    // We go through each ring in our list
-    for (final ring in _rings) {
-      // We make the ring bigger. 'dt' helps us make the growth smooth
-      // no matter how fast the phone is.
-      ring.radius += 200 * dt;
-
-      // If a ring is bigger than the screen, we get ready to remove it
-      if (ring.radius > size.x) {
-        ringsToRemove.add(ring);
-      }
-    }
-
-    // We remove all the rings that are too big
-    for (final ring in ringsToRemove) {
-      _rings.remove(ring);
-      remove(ring);
-    }
-  }
-
-  // This function creates a new ring and adds it to our game
-  void _spawnRing() {
-    // We make the ring have a slightly different shade of white/grey
-    final color = Color.fromARGB(
-      255,
-      200 + _random.nextInt(56),
-      200 + _random.nextInt(56),
-      200 + _random.nextInt(56),
-    );
-
-    // We create the new ring with a starting radius of 1
-    final newRing = TubeRing(radius: 1, color: color);
-    // We add the new ring to our list of rings
-    _rings.add(newRing);
-    // We add the new ring to the game so it gets drawn
-    add(newRing);
-  }
-
-  @override
-  void onGameResize(Vector2 gameSize) {
-    super.onGameResize(gameSize);
-    // Make the tube component take up the whole screen
+    // We make our tube component take up the whole screen.
     size = gameSize;
   }
 }
