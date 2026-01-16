@@ -9,20 +9,37 @@ class TubeRing extends PositionComponent {
   final Paint paint;
   // This is how big the ring is right now
   double radius;
+  // This is the angle where the gap in the ring starts.
+  final double startAngle;
+  // This is how big the gap in the ring is.
+  final double sweepAngle;
 
-  // When we make a new ring, we give it a starting size (radius) and color
-  TubeRing({required this.radius, required Color color})
-      : paint = Paint()
+  // When we make a new ring, we give it its properties
+  TubeRing({
+    required this.radius,
+    required Color color,
+    required this.startAngle,
+    required this.sweepAngle,
+  }) : paint = Paint()
           ..color = color
-          // This makes the ring a filled circle, not just an outline
-          ..style = PaintingStyle.fill;
+          // This makes the ring an outline, not a filled circle
+          ..style = PaintingStyle.stroke
+          // This is how thick the line of the ring is
+          ..strokeWidth = 20.0;
 
   @override
   void render(Canvas canvas) {
     super.render(canvas);
-    // This is where we actually draw the circle on the screen
-    // We draw it at the center of our component, with its current radius
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), radius, paint);
+    // This is where we actually draw the arc on the screen.
+    // An arc is a part of a circle.
+    canvas.drawArc(
+      // We define a rectangle that the arc will be drawn inside of.
+      Rect.fromCircle(center: Offset(size.x / 2, size.y / 2), radius: radius),
+      startAngle,
+      sweepAngle,
+      false, // This means we don't connect the ends of the arc to the center
+      paint,
+    );
   }
 
   @override
@@ -38,6 +55,7 @@ class TubeRing extends PositionComponent {
 // This is the main component for our tube. It will manage all the rings.
 class Tube extends PositionComponent {
   // A list to hold all the rings that are currently on the screen
+  List<TubeRing> get rings => _rings;
   final List<TubeRing> _rings = [];
   // A timer to control how often we add a new ring
   final Timer _spawnTimer = Timer(0.5, repeat: true);
@@ -96,8 +114,17 @@ class Tube extends PositionComponent {
       200 + _random.nextInt(56),
     );
 
-    // We create the new ring with a starting radius of 1
-    final newRing = TubeRing(radius: 1, color: color);
+    // We create the new ring with a random start angle for the gap.
+    // `_random.nextDouble()` gives us a number between 0.0 and 1.0.
+    // We multiply that by 2 * pi to get a full circle of possible angles.
+    final startAngle = _random.nextDouble() * 2 * pi;
+
+    final newRing = TubeRing(
+      radius: 1,
+      color: color,
+      startAngle: startAngle,
+      sweepAngle: pi * 1.8, // Almost a full circle
+    );
     // We add the new ring to our list of rings
     _rings.add(newRing);
     // We add the new ring to the game so it gets drawn

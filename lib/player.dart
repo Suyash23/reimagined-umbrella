@@ -1,9 +1,21 @@
 
+import 'dart:math';
+
 import 'package:flame/components.dart';
-import 'package:flame/sprite.dart';
 
 // This is our player, the character that runs.
 class Player extends SpriteAnimationComponent with HasGameRef {
+  // This is the angle where the player is on the circle.
+  // We measure it in radians, which is a way to measure angles.
+  // 0 is at the top, and it goes around clockwise.
+  double currentAngle = 0;
+
+  // This is how far the player is from the center of the screen.
+  // We make it public so the game can check for collisions.
+  double get radius => _playerRadius;
+  // We'll calculate this later when we know the screen size.
+  double _playerRadius = 0;
+
   // We are going to make a new player.
   Player()
       : super(
@@ -18,17 +30,16 @@ class Player extends SpriteAnimationComponent with HasGameRef {
     await super.onLoad();
 
     // We are loading the running animation from the image file.
+    // We tell it the picture, and how to cut it up into frames.
     // It has 8 frames (pictures), each is 78 pixels wide and 128 pixels tall.
     // We tell it to play at 10 frames per second (1 frame every 0.1 seconds) and to loop.
-    final spriteSheet = SpriteSheet(
-      image: await game.images.load('runner.png'),
-      srcSize: Vector2(78.0, 128.0),
-    );
-
-    animation = spriteSheet.createAnimation(
-      row: 0,
-      stepTime: 0.1,
-      to: 8,
+    animation = await game.loadSpriteAnimation(
+      'runner.png',
+      SpriteAnimationData.sequenced(
+        amount: 8,
+        stepTime: 0.1,
+        textureSize: Vector2(78.0, 128.0),
+      ),
     );
   }
 
@@ -43,10 +54,38 @@ class Player extends SpriteAnimationComponent with HasGameRef {
     width = 100;
     height = width * (128.0 / 78.0);
 
-    // We put the player at the bottom-center of the screen.
-    // The 'x' is the horizontal position, and 'y' is the vertical position.
-    // 'size.x / 2' is the middle of the screen horizontally.
-    // 'size.y * 0.8' is 80% of the way down the screen, which is near the bottom.
-    position = Vector2(size.x / 2, size.y * 0.8);
+    // We calculate how far the player should be from the center of the screen.
+    // This will be 3/4 of the way to the edge of the screen.
+    _playerRadius = size.x / 4 * 3;
+
+    // We update the player's position based on the new screen size and angle.
+    _updatePosition();
+  }
+
+  // This function moves the player to the left around the circle.
+  void moveLeft() {
+    currentAngle -= 0.1;
+    _updatePosition();
+  }
+
+  // This function moves the player to the right around the circle.
+  void moveRight() {
+    currentAngle += 0.1;
+    _updatePosition();
+  }
+
+  // This is a helper function to put the player in the right spot.
+  void _updatePosition() {
+    // We use some math (sine and cosine) to figure out the x and y position
+    // on a circle. We use game.size / 2 to make the center of the circle
+    // the center of the screen.
+    position = Vector2(
+      cos(currentAngle) * _playerRadius + game.size.x / 2,
+      sin(currentAngle) * _playerRadius + game.size.y / 2,
+    );
+
+    // We also rotate the player sprite so it looks like it's running
+    // on the inside of the tube.
+    angle = currentAngle + pi / 2;
   }
 }
